@@ -1,0 +1,5 @@
+const express=require('express');const router=express.Router();const User=require('../models/User');const Transaction=require('../models/Transaction');const Bet=require('../models/Bet');
+router.get('/stats',async(req,res)=>{const dep=await Transaction.aggregate([{$match:{type:'deposit',status:'success'}},{$group:{_id:null,total:{$sum:'$amount'}}}]);const wd=await Transaction.aggregate([{$match:{type:'withdrawal',status:'success'}},{$group:{_id:null,total:{$sum:'$amount'}}}]);
+res.json({totalDeposits:dep[0]?.total||0,totalWithdrawals:wd[0]?.total||0,profit:(dep[0]?.total||0)-(wd[0]?.total||0),totalBets:await Bet.countDocuments(),totalUsers:await User.countDocuments(),recentDeposits:await Transaction.find({type:'deposit'}).sort({createdAt:-1}).limit(20),recentWithdrawals:await Transaction.find({type:'withdrawal'}).sort({createdAt:-1}).limit(20)});});
+router.post('/withdraw/approve/:id',async(req,res)=>{const t=await Transaction.findById(req.params.id);t.status='success';await t.save();res.json(t);});
+module.exports=router;
