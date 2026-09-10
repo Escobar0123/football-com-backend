@@ -1,0 +1,5 @@
+const express=require('express');const router=express.Router();const Bet=require('../models/Bet');const User=require('../models/User');
+router.post('/place',async(req,res)=>{const user=await User.findOne({email:req.body.email});if(!user||user.balance<req.body.stake)return res.status(400).json({error:'Low balance'});user.balance-=req.body.stake;user.totalBets++;await user.save();const bet=await Bet.create({...req.body,status:'pending'});res.json({bet,balance:user.balance});});
+router.post('/cashout',async(req,res)=>{const bet=await Bet.findById(req.body.betId);bet.cashoutAt=req.body.cashoutAt;bet.status='won';bet.profit=bet.stake*req.body.cashoutAt-bet.stake;await bet.save();const user=await User.findOne({email:bet.email});user.balance+=bet.stake*req.body.cashoutAt;await user.save();res.json({balance:user.balance});});
+router.post('/lose',async(req,res)=>{const bet=await Bet.findById(req.body.betId);bet.crashPoint=req.body.crashPoint;bet.status='lost';bet.profit=-bet.stake;await bet.save();res.json(bet);});
+module.exports=router;
