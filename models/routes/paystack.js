@@ -1,0 +1,4 @@
+const express=require('express');const router=express.Router();const axios=require('axios');const Transaction=require('../models/Transaction');
+router.post('/initialize',async(req,res)=>{try{const{email,amount}=req.body;const r=await axios.post('https://api.paystack.co/transaction/initialize',{email,amount:Math.floor(amount*100)},{headers:{Authorization:`Bearer ${process.env.PAYSTACK_SECRET_KEY}`}});await Transaction.create({email,type:'deposit',amount,reference:r.data.data.reference,status:'pending'});res.json(r.data.data);}catch(e){res.status(500).json({error:'Paystack failed'});}});
+router.post('/withdraw',async(req,res)=>{const{email,amount,accountNumber,bankName,accountName}=req.body;const t=await Transaction.create({email,type:'withdrawal',amount,status:'pending',bankDetails:{accountNumber,bankName,accountName},reference:'WD-'+Date.now()});res.json(t);});
+module.exports=router;
